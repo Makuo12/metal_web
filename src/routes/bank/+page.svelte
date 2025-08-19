@@ -2,6 +2,6 @@
     import Bank from "./bank.svelte";
 </script>
 
-<div class="business">
+<div class="bank">
     <Bank />
 </div>

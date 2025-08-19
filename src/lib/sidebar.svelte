@@ -7,7 +7,8 @@
         { name: "Profile", href: "/profile" },
         { name: "Business", href: "/business" },
         { name: "Bank", href: "/bank" },
-        { name: "Account", href: "/account" }
+        { name: "Account", href: "/account" },
+        { name: "Payment", href: "/payment" }
     ];
 
     /** @param {String} path */
@@ -129,7 +130,7 @@ nav {
         bottom: 0;
         left: 0;
         width: 100%;
-        height: 60px;
+        height: 28px;
         flex-direction: row;
         align-items: center;
         justify-content: space-around;

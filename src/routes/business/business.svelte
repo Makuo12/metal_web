@@ -5,21 +5,34 @@ import { page } from '$app/stores';
   import type { Map } from "leaflet";
   import "leaflet/dist/leaflet.css";
 import { goto } from '$app/navigation';
-  
+	import Sidebar from "$lib/sidebar.svelte";
+ let showMap = false; // state 
   const links = [
     { name: "Profile", href: "/profile" },
     { name: "Business", href: "/business" },
     { name: "Bank", href: "/bank" },
     { name: "Account", href: "/account" },
   ];
-
   function navigate(path: string) {
     goto(path);
+  }
+  // Popover state
+  let showDevicePopover = false;
+  let selectedDevice: Device | null = null;
+  function viewDevice(device: Device) {
+    selectedDevice = device;
+    showDevicePopover = true;
+  }
+
+  function closeDevicePopover() {
+    showDevicePopover = false;
+    selectedDevice = null;
   }
   type Device = {
     device_id: string;
     name: string;
     device_type: string;
+    active: boolean;
   };
 
   type Business = {
@@ -36,43 +49,27 @@ import { goto } from '$app/navigation';
       location: "Victoria Island, Lagos",
       geolocation: [6.4281, 3.4216],
       devices: [
-        { device_id: "d1", name: "POS 1", device_type: "POS" },
-        { device_id: "d2", name: "Scanner A", device_type: "Scanner" }
+        { device_id: "d1", name: "POS 1", device_type: "POS", active: true },
+        { device_id: "d2", name: "Scanner A", device_type: "Scanner", active: false }
       ]
     },
     {
-      name: "Jabi Lake Mall",
+      name: "Jabi Lake Mall5",
       location: "Jabi, Abuja",
       geolocation: [9.0667, 7.4833],
-      devices: [{ device_id: "d3", name: "POS 2", device_type: "POS" }]
+      devices: [{ device_id: "d3", name: "POS 2", device_type: "POS" , active: false}]
+    },
+    {
+      name: "Jabi Lake Mall4",
+      location: "Jabi, Abuja",
+      geolocation: [9.0667, 7.4833],
+      devices: [{ device_id: "d3", name: "POS 2", device_type: "POS", active: true}]
     }
   ];
 
   let map: Map;
 
-  function toggleExpand(biz: Business) {
-    biz.expanded = !biz.expanded;
-    businesses = [...businesses]
-    
-  }
 
-  function addDevice(biz: Business) {
-    const id = "dev-" + Math.random().toString(36).slice(2, 7);
-    biz.devices.push({ device_id: id, name: "New Device", device_type: "Unknown" });
-  }
-
-  function removeDevice(biz: Business, id: string) {
-    biz.devices = biz.devices.filter(d => d.device_id !== id);
-  }
-
-  function addBusiness() {
-    businesses.push({
-      name: "New Business",
-      location: "Somewhere in Nigeria",
-      geolocation: [9.05785, 7.49508],
-      devices: []
-    });
-  }
 
   onMount(async () => {
     if (!browser) return;
@@ -96,248 +93,354 @@ import { goto } from '$app/navigation';
   });
 </script>
 <!-- Navbar -->
-<nav class="navbar">
-  {#each links as link}
-    <button
-      class="nav-btn { $page.url.pathname === link.href ? 'active' : '' }"
-      on:click={() => navigate(link.href)}
-    >
-      {link.name}
-    </button>
-  {/each}
-</nav>
 <div class="page">
-  <!-- Business List -->
-  <div class="business-list">
-    <div class="header">
-      <h2>Businesses</h2>
-      <button class="add-business" on:click={addBusiness}>+ Add Business</button>
-    </div>
-    <ul>
-      {#each businesses as biz}
-        <li class="business-card">
-          <button class="business-header" on:click={() => toggleExpand(biz)}>
-            <div>
-              <strong>{biz.name}</strong>
-              <div class="location">{biz.location}</div>
-            </div>
-            <span class="arrow">{biz.expanded ? "▲" : "▼"}</span>
-          </button>
-
-          <div class="dropdown {biz.expanded ? 'open' : ''}">
-            <div class="devices">
-              <h4>Devices</h4>
-              <ul>
-                {#each biz.devices as device}
-                  <li class="device-item">
-                    <span>{device.name} ({device.device_type})</span>
-                    <button class="remove" on:click={() => removeDevice(biz, device.device_id)}>Remove</button>
-                  </li>
-                {/each}
-              </ul>
-              <button class="add-device" on:click={() => addDevice(biz)}>+ Add Device</button>
-            </div>
-          </div>
-        </li>
-      {/each}
-    </ul>
+  <!-- Map (background layer) -->
+  <div
+    id="map"
+    class="map-layer"
+    style="opacity: {showMap ? 1 : 0}; pointer-events: {showMap ? 'auto' : 'none'}; transition: opacity 0.3s ease;">
   </div>
 
-  <!-- Map -->
-  <div id="map"></div>
+  <!-- Business List (overlay layer) -->
+  <div
+    class="business-list"
+    style="opacity: {showMap ? 0 : 1}; pointer-events: {showMap ? 'none' : 'auto'}; transition: opacity 0.3s ease;">
+    <div class="business-detail">
+    <Sidebar />
+<div class="business-view">
+  <h2>Businesses</h2>
+
+  <ul>
+    {#each businesses as biz}
+      <li class="business-card">
+        <div class="business-header">
+          <div>
+            <strong>{biz.name}</strong>
+            <div class="location">{biz.location}</div>
+          </div>
+        </div>
+
+        <div class="devices">
+          <h4>Devices</h4>
+          <ul>
+            {#each biz.devices as device}
+              <li class="device-item">
+                <span>{device.name}</span>
+                <small>({device.device_type})</small>
+                <button on:click={() => viewDevice(device)}>View</button>
+              </li>
+            {/each}
+          </ul>
+        </div>
+      </li>
+    {/each}
+  </ul>
+
+</div>
+    </div>
+  </div>
+</div>
+<!-- Toggle Floating Action Button -->
+<button 
+  class="fab" 
+  on:click={() => showMap = !showMap}>
+  {showMap ? "🏢" : "🗺️"}
+</button>
+
+<!-- Device Popover Overlay -->
+{#if showDevicePopover && selectedDevice}
+<!-- Overlay as a button (covers screen, closes popover) -->
+<button 
+  type="button"
+  class="overlay"
+  on:click={closeDevicePopover}
+  aria-label="Close device details"
+></button>
+
+<div class="popover" role="dialog" aria-modal="true">
+  <header class="popover-header">
+    <h2>{selectedDevice.name}</h2>
+    <button 
+      type="button" 
+      class="close-btn" 
+      on:click={closeDevicePopover}
+      aria-label="Close popover"
+    >
+      ✖
+    </button>
+  </header>
+
+  <div class="popover-body">
+    <p><strong>Type:</strong> {selectedDevice.device_type}</p>
+    <p><strong>ID:</strong> {selectedDevice.device_id}</p>
+
+    <div class="switch-row">
+      <label class="switch">
+        <input
+          type="checkbox"
+          bind:checked={selectedDevice.active}
+        />
+        <span class="slider"></span>
+      </label>
+      <span class="status-text">{selectedDevice.active ? "Active" : "Locked"}</span>
+    </div>
+  </div>
 </div>
 
+{/if}
+
 <style>
-    :global(body) {
-        margin: 0;
-        padding: 0;
-    }
-  .page {
-    display: flex;
-    height: 100vh;
-  }
+.page {
+  position: relative;
+  width: 100%;
+  height: 100vh; /* full viewport */
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
 
-  .business-list {
-    flex: 1;
-    max-width: 420px;
-    padding: 1rem;
-    background: #f9fafb;
-    overflow-y: auto;
-    box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-  }
+/* Map sits in background */
+.map-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
 
-  .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-  }
+/* Business list overlays */
+.business-detail {
+  display: flex;
+  flex: 1;              /* fill available height */
+  overflow: hidden;      /* prevents extra scrollbars */
+  font-family: system-ui, sans-serif;
+}
 
-  .add-business {
-    padding: 0.5rem 1rem;
-    border: none;
-    background: #2563eb;
-    color: white;
-    font-weight: 500;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-  .add-business:hover {
-    background: #1e40af;
-  }
+.business-view {
+  flex: 1;
+  max-width: 800px;
+  margin: 2rem auto;
+  padding-right: 0.5rem;
+  overflow-y: auto;      /* main scroll area */
+}
 
-  .business-card {
-    background: white;
-    margin-bottom: 0.75rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    overflow: hidden;
-  }
+/* Floating Add Business button */
+/* Toggle FAB for switching map/list */
+.fab {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+  z-index: 20; /* stays above */
+}
 
-  .business-header {
-    cursor: pointer;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    border: none;
-    background: #f3f4f6;
-    padding: 0.75rem;
-    font-size: 1rem;
-    text-align: left;
-  }
+.fab:hover {
+  background: #0056b3;
+  transform: scale(1.05);
+}
 
-  .business-header:hover {
-    background: #e5e7eb;
-  }
+.fab:active {
+  transform: scale(0.95);
+}
 
-  .location {
-    font-size: 0.85rem;
-    color: #6b7280;
-  }
+/* Reset body */
+:global(body) {
+  margin: 0;
+  padding: 0;
+}
 
-  .arrow {
-    font-size: 0.9rem;
-    color: #374151;
-  }
+#map {
+  height: 100%;
+  width: 100%;
+  opacity: 0;
+}
 
-  .dropdown {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.3s ease, padding 0.3s ease;
-    background: #fff;
-  }
+/* Business Cards */
+h2 {
+  font-size: 1.8rem;
+  margin: 1rem;
+}
 
-  .dropdown.open {
-    max-height: 500px; /* enough for devices */
-    padding: 0.75rem;
-  }
+.business-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
 
-  .devices h4 {
-    margin: 0.5rem 0;
-    font-size: 0.95rem;
-    color: #374151;
-  }
+.business-header strong {
+  font-size: 1.2rem;
+}
 
-  .device-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: #f1f5f9;
-    padding: 0.4rem 0.6rem;
-    border-radius: 5px;
-    margin-bottom: 0.5rem;
-    font-size: 0.9rem;
-  }
+.location {
+  font-size: 0.9rem;
+  color: #666;
+}
 
-  .device-item .remove {
-    background: #ef4444;
-    border: none;
-    color: white;
-    padding: 0.3rem 0.6rem;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 0.8rem;
-  }
-  .device-item .remove:hover {
-    background: #b91c1c;
-  }
+.devices h4 {
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
 
-  .add-device {
-    margin-top: 0.5rem;
-    background: #10b981;
-    color: white;
-    border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    transition: background 0.2s;
-  }
-  .add-device:hover {
-    background: #059669;
-  }
+.device-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem;
+  background: #f9f9f9;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+}
+.business-view {
+  height: 90vh;       /* full screen height */
+  overflow-y: auto;    /* enable scrolling */
+  
+}
+.device-item button {
+  margin-left: auto;
+  background: #0056b3;
+  color: white;
+  border: none;
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
 
-  #map {
-    flex: 2;
-  }
-.navbar {
-    display: flex;
-    justify-content: center;
-    gap: 1rem;
-    background: #222;
-    padding: 0.5rem 1rem;
-    color: white;
-    flex-wrap: wrap;
-  }
+.device-item button:hover {
+  background: #0056b3;
+}
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  border: none;
+  cursor: pointer;
+  z-index: 90;
+}
 
-  .nav-btn {
-    background: transparent;
-    border: none;
-    color: #bbb;
-    padding: 0.5rem 1rem;
-    cursor: pointer;
-    border-radius: 5px;
-    transition: background 0.2s;
-  }
+/* Popover container */
+.popover {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #fff;
+  border-radius: 1rem;
+  width: 360px;
+  max-width: 90%;
+  padding: 1.5rem;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  z-index: 100;
+  font-family: system-ui, sans-serif;
+  animation: fadeIn 0.25s ease-out;
+}
 
-  .nav-btn.active {
-    background: #2563eb;
-    color: white;
-  }
+/* Header */
+.popover-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
 
-  .nav-btn:hover {
-    background: #444;
-    color: white;
-  }
+.popover-header h2 {
+  font-size: 1.25rem;
+  margin: 0;
+  font-weight: 600;
+  color: #222;
+}
 
-  /* Mobile: bottom navbar */
-  @media (max-width: 768px) {
-    .navbar {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      justify-content: space-around;
-      padding: 0.5rem 0;
-      z-index: 1000;
-    }
-  }
-@media (max-width: 768px) {
-    .page {
-      flex-direction: column;
-    }
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  color: #666;
+  transition: color 0.2s;
+}
+.close-btn:hover {
+  color: #111;
+}
 
-    .business-list {
-      max-width: 100%;
-      height: 90vh;
-      box-shadow: none;
-    }
+/* Body */
+.popover-body p {
+  margin: 0.5rem 0;
+  color: #444;
+  font-size: 0.95rem;
+}
 
-    #map {
-      height: 10vh; /* your style */
-      width: 100%;
-    }
-  }
+/* Switch row */
+.switch-row {
+  display: flex;
+  align-items: center;
+  margin-top: 1.25rem;
+  gap: 0.75rem;
+}
+
+/* Toggle Switch */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background-color: #ccc;
+  border-radius: 24px;
+  transition: 0.3s;
+}
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  border-radius: 50%;
+  transition: 0.3s;
+}
+
+/* Checked state */
+.switch input:checked + .slider {
+  background-color: #4caf50;
+}
+.switch input:checked + .slider:before {
+  transform: translateX(20px);
+}
+
+.status-text {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #222;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translate(-50%, -48%); }
+  to   { opacity: 1; transform: translate(-50%, -50%); }
+}
 </style>

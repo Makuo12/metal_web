@@ -2,6 +2,6 @@
     import Business from "./business.svelte";
 </script>
 
-<div class="home">
+<div class="business">
     <Business />
 </div>

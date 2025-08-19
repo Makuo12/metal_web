@@ -63,7 +63,7 @@ import { Eye, EyeOff, Lock } from 'lucide-svelte'; // icons
     :global(body) {
     margin: 0;
     padding: 0;
-}
+    }
 .dashboard {
     display: flex;
     min-height: 100vh;

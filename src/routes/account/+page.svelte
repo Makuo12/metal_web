@@ -2,6 +2,6 @@
     import Account from "./account.svelte";
 </script>
 
-<div class="home">
+<div class="account">
     <Account />
 </div>

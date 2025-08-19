@@ -87,16 +87,24 @@
     padding: 0;
 }
 .main-account {
-    display: flex;
-    min-height: 100vh;
-    font-family: system-ui, sans-serif;
-    background: #f8f9fb;
-    margin: 0;
+  display: flex;
+  min-height: 100vh;
+  font-family: system-ui, sans-serif;
+  background: #f8f9fb;
+  margin: 0;
 }
-  .accounts-view {
-    padding: 1.5rem;
-  }
 
+.accounts-view {
+  flex: 1; /* ✅ take up all space left of Sidebar */
+  padding: 1.5rem;
+  overflow-y: auto; /* optional: scroll if content grows */
+}
+
+.accounts-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
   .accounts-view h2 {
     font-size: 1.4rem;
     margin-bottom: 1rem;

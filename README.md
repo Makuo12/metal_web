@@ -1,38 +1,55 @@
-# sv
+# Metal  
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+**Metal** is a next-generation contactless payment solution designed to provide seamless, secure, and affordable transactions without relying on traditional card networks like Mastercard or Visa.  
 
-## Creating a project
+Our mission is to lower transaction costs for merchants while ensuring fast, reliable, and modern payment experiences for consumers.  
 
-If you're seeing this, you've probably already done this step. Congrats!
+---
 
-```sh
-# create a new project in the current directory
-npx sv create
+## 🚀 Features  
 
-# create a new project in my-app
-npx sv create my-app
-```
+- **Contactless Payments** – Uses **ISO/IEC 14443** (same standard as EMV cards).  
+- **Banking System Integration** – Works directly with banks and payment providers.  
+- **Low Merchant Fees** – Avoids Mastercard/Visa transaction charges.  
+- **Cross-Platform** – Supports **Android, iOS, and web interfaces**.  
+- **Secure** – Implements **end-to-end encryption** with modern cryptographic standards.  
 
-## Developing
+---
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+## 📌 Vision  
+Metal aims to redefine the future of payments by building an open, affordable, and accessible ecosystem that empowers businesses and consumers alike.  
 
-```sh
-npm run dev
+## 🌍 Use Cases  
+- Retail point-of-sale payments  
+- Peer-to-peer transfers  
+- Online and in-app purchases  
+- Merchant settlements with lower fees  
 
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
+---
 
-## Building
+## 🔒 Security  
+Metal is designed with **privacy and cryptography at its core**, ensuring that:  
+- All transactions are **end-to-end encrypted**  
+- Sensitive payment data never leaves the device unprotected  
+- Modern cryptographic algorithms safeguard both consumers and merchants  
 
-To create a production version of your app:
+---
 
-```sh
-npm run build
-```
+## 📱 Platforms Supported  
+- **Android** (Native SDK)  
+- **iOS** (Native SDK)  
+- **Web** (JavaScript API)  
 
-You can preview the production build with `npm run preview`.
+---
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+## 🤝 Contributing  
+We welcome contributions from developers, researchers, and financial institutions who share our vision.  
+
+---
+
+## 📫 Contact  
+For inquiries, partnerships, or early access:  
+- Email: **team@metalpay.io**  
+- Website: [metalpay.io](https://metalpay.io)  
+
+---

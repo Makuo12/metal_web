@@ -1,6 +1,11 @@
 <script lang="ts">
 	import Sidebar from "$lib/sidebar.svelte";
-
+	import { auth } from "$lib/stores/auth";
+	import { onMount } from "svelte";
+	import { get } from "svelte/store";
+    type UserAccountResponse = {
+        list: AccountResponse[];
+    }
   type Account = {
     id: string;
     bank_name: string;
@@ -9,38 +14,45 @@
     created_at: string;
     updated_at: string;
   };
+  type AccountResponse = {
+    bank_name: string;
+    account_name: string;
+    account_number: string;
+    bank_id: string;
+    created_at: string;
+    updated_at: string;
+}
+    let accounts: Account[] = [];
+    // Fetch bank info from server
+    onMount(async () => {
+        try {
+            const token = get(auth).user?.access_token || "";
+            const response = await fetch("http://localhost:8082/api/auth/account", {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+            });
 
-  // Dummy data
-  let accounts: Account[] = [
-    {
-      id: "1",
-      bank_name: "First Bank",
-      account_name: "Uwa Christian",
-      account_number: "1234567890",
-      created_at: "2024-12-10T09:00:00Z",
-      updated_at: "2025-02-01T10:30:00Z"
-    },
-    {
-      id: "2",
-      bank_name: "GT Bank",
-      account_name: "Flizzup Tech",
-      account_number: "9876543210",
-      created_at: "2025-01-15T15:45:00Z",
-      updated_at: "2025-02-05T12:20:00Z"
-    },
-    {
-      id: "3",
-      bank_name: "Zenith Bank",
-      account_name: "Metal Pay",
-      account_number: "1122334455",
-      created_at: "2025-01-28T08:00:00Z",
-      updated_at: "2025-02-10T14:00:00Z"
+        const data: UserAccountResponse = await response.json();
+       accounts = data.list.map(acc => ({
+            id: acc.bank_id, // Assuming bank_id is unique
+            bank_name: acc.bank_name,
+            account_name: acc.account_name,
+            account_number: acc.account_number,
+            created_at: acc.created_at,
+            updated_at: acc.updated_at
+        }));
+    } catch (err) {
+        console.error(err);
     }
-  ];
+    });
+  // Dummy data
 </script>
 
 <div class="main-account">
-    <Sidebar />
+    <Sidebar loginType={get(auth).user?.login_type} />
     <div class="accounts-view">
     <h2>Bank Accounts</h2>
 

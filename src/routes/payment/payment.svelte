@@ -1,5 +1,7 @@
 <script>
   import Sidebar from "$lib/sidebar.svelte";
+	import { auth } from "$lib/stores/auth";
+	import { get } from "svelte/store";
 import { fly, fade, scale } from "svelte/transition";
 
   // Dummy payment data
@@ -120,7 +122,7 @@ import { fly, fade, scale } from "svelte/transition";
 </style>
 
 <div class="main-payment">
-  <Sidebar />
+    <Sidebar loginType={get(auth).user?.login_type} />
   <div class="container">
     <h2>Payment List</h2>
 

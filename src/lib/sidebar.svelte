@@ -2,8 +2,8 @@
     import { goto } from '$app/navigation';
     import { page } from '$app/stores';
     import { writable } from 'svelte/store';
-
-    let links = [
+    export let loginType;
+    const allLinks = [
         { name: "Profile", href: "/profile" },
         { name: "Business", href: "/business" },
         { name: "Bank", href: "/bank" },
@@ -11,6 +11,10 @@
         { name: "Payment", href: "/payment" }
     ];
 
+  // Filter links based on loginType
+  $: links = loginType === 'bank'
+    ? allLinks.filter(link => link.href === "/profile" || link.href === "/bank")
+    : allLinks.filter(link => link.href !== "/bank");
     /** @param {String} path */
     function goTo(path) {
         if (path === "/profile" && $page.url.pathname === path) {

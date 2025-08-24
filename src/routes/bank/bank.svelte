@@ -1,63 +1,107 @@
-<script>
+<script lang="ts">
     import Sidebar from '$lib/sidebar.svelte';
-import { Eye, EyeOff, Lock } from 'lucide-svelte'; // icons
-
-    export let bank = {
-        id: "28",
-        user_id: "some-uuid",
-        name: "TAJ BANK LIMITED",
-        address: "Plot 72, Ahmadu Bello Way, Central Business District, Abuja",
-        state: "ABUJA",
-        private_apk_key: "sk_test_123456789abcdef",
-        public_apk_key: "pk_test_987654321abcdef"
-    };
+    import { auth } from '$lib/stores/auth';
+    import { Eye, EyeOff, Lock } from 'lucide-svelte';
+    import { get } from 'svelte/store';
+    import { onMount } from 'svelte';
+    // Local state
+    let bank: {
+        id: string,
+        user_id: string,
+        bank_name: string,
+        location: string,
+        state: string,
+        apk_key: string
+    } | null = null;
 
     let showPrivate = false;
     let showPublic = false;
+
+    // Fetch bank info from server
+    onMount(async () => {
+        try {
+            const token = get(auth).user?.access_token || "";
+            const response = await fetch("http://localhost:8082/api/auth/bank", {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+            });
+
+
+        const data: {
+            id: string,
+            user_id: string,
+            apk_key: string,
+            bank_name: string,
+            location: string,
+            state: string
+        } = await response.json();
+
+        // Map server response to local bank object
+        bank = {
+            id: data.id,
+            user_id: data.user_id,
+            bank_name: data.bank_name,
+            location: data.location,
+            state: data.state,
+            apk_key: data.apk_key
+        };
+        } catch (err) {
+        console.error(err);
+        }
+    });
 </script>
 
 <div class="dashboard">
-    <Sidebar />
+  <Sidebar loginType={get(auth).user?.login_type} />
+
+  {#if bank}
     <div class="bank-card">
-        <h2 class="bank-name">{bank.name}</h2>
-        <p class="bank-address">{bank.address}</p>
-        <p class="bank-state">{bank.state}</p>
+      <h2 class="bank-name">{bank.bank_name}</h2>
+      <p class="bank-address">{bank.location}</p>
+      <p class="bank-state">{bank.state}</p>
 
-        <div class="apk-key">
-            <div class="label">
-            <Lock size="16" />
-            <span>Private APK Key</span>
-            </div>
-            <div class="key-row">
-            <span>{showPrivate ? bank.private_apk_key : "••••••••••••••••••••••"}</span>
-            <button on:click={() => (showPrivate = !showPrivate)}>
-                {#if showPrivate}
-                <EyeOff size="18" />
-                {:else}
-                <Eye size="18" />
-                {/if}
-            </button>
-            </div>
+      <div class="apk-key">
+        <div class="label">
+          <Lock size="16" />
+          <span>Private APK Key</span>
         </div>
+        <div class="key-row">
+          <span>{showPrivate ? bank.apk_key : "••••••••••••••••••••••"}</span>
+          <button on:click={() => (showPrivate = !showPrivate)}>
+            {#if showPrivate}
+              <EyeOff size="18" />
+            {:else}
+              <Eye size="18" />
+            {/if}
+          </button>
+        </div>
+      </div>
 
-        <div class="apk-key">
-            <div class="label">
-            <Lock size="16" />
-            <span>Public APK Key</span>
-            </div>
-            <div class="key-row">
-            <span>{showPublic ? bank.public_apk_key : "••••••••••••••••••••••"}</span>
-            <button on:click={() => (showPublic = !showPublic)}>
-                {#if showPublic}
-                <EyeOff size="18" />
-                {:else}
-                <Eye size="18" />
-                {/if}
-            </button>
-            </div>
+      <div class="apk-key">
+        <div class="label">
+          <Lock size="16" />
+          <span>Public APK Key</span>
         </div>
+        <div class="key-row">
+          <span>{showPublic ? bank.apk_key : "••••••••••••••••••••••"}</span>
+          <button on:click={() => (showPublic = !showPublic)}>
+            {#if showPublic}
+              <EyeOff size="18" />
+            {:else}
+              <Eye size="18" />
+            {/if}
+          </button>
+        </div>
+      </div>
     </div>
+  {:else}
+    <p>Loading bank info...</p>
+  {/if}
 </div>
+
 
 <style>
     :global(body) {

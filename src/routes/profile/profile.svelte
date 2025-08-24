@@ -17,7 +17,7 @@
 
         try {
             const token = get(auth).user?.access_token || "";
-            const response = await fetch("http://localhost:8081/api/auth/update", {
+            const response = await fetch("http://localhost:8082/api/auth/update", {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
@@ -37,7 +37,7 @@
                 // Sync store with new values
                 console.log("Profile updated successfully", data);
                 auth.update((state) => ({
-                    user: { first_name: data.first_name, last_name: data.last_name, email: data.email, access_token: data.session.access_token, refresh_token: data.session.refresh_token }
+                    user: { first_name: data.first_name, last_name: data.last_name, email: data.email, access_token: data.session.access_token, refresh_token: data.session.refresh_token, login_type: state.user?.login_type || "bank" }
                 }));
             }
 
@@ -52,7 +52,7 @@
 
 <div class="main-profile">
     <!-- Sidebar -->
-    <Sidebar />
+    <Sidebar loginType={get(auth).user?.login_type} />
 
     <!-- Main Content -->
     <main class="main-content">

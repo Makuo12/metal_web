@@ -8,81 +8,95 @@
     let password = "";
     let error = "";
 
-    function goToSettings() {
-        goto('/profile');
+    // New field for login selection
+    let loginType = 'bank'; // Default to bank
+    /** @param {string} route */
+    function goToSettings(route) {
+        goto(route);
     }
 
-        /** @param {Event} event */
+    /** @param {Event} event */
     async function handleSubmit(event) {
-            event.preventDefault();
-            error = "";
+        event.preventDefault();
+        error = "";
 
-            if (isLogin) {
-                // 👇 LOGIN flow
-                try {
-                    const response = await fetch('http://localhost:8081/api/user/login', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            first_name: firstName,
-                            last_name: lastName,
-                            email,
-                            hashed_password: password
-                        })
-                    });
+        if (isLogin) {
+            // 👇 LOGIN flow
+            try {
+                const response = await fetch('http://localhost:8082/api/user/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        first_name: firstName,
+                        last_name: lastName,
+                        email,
+                        hashed_password: password,
+                        type: loginType // send login type
+                    })
+                });
 
-                    if (!response.ok) {
-                        const data = await response.json();
-                        throw new Error(data.message || 'Failed to login');
-                    }
-
+                if (!response.ok) {
                     const data = await response.json();
-                    
-                    localStorage.setItem('auth', JSON.stringify(data));
-                    // 👇 Save user + tokens to store (and localStorage via subscription)
-                    auth.set({
-                        user: { first_name: data.first_name, last_name: data.last_name, email: data.email, access_token: data.session.access_token, refresh_token: data.session.refresh_token }
-                    });
-
-                    goToSettings();
-                } catch (err) {
-                    console.error(err);
-                    error = "Login failed";
+                    throw new Error(data.message || 'Failed to login');
                 }
-            } else {
-                // 👇 REGISTER flow
-                try {
-                    const response = await fetch('http://localhost:8081/api/user/register', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            first_name: firstName,
-                            last_name: lastName,
-                            email,
-                            hashed_password: password
-                        })
-                    });
 
-                    if (!response.ok) {
-                        const data = await response.json();
-                        throw new Error(data.message || 'Failed to register');
+                const data = await response.json();
+                
+                localStorage.setItem('auth', JSON.stringify(data));
+
+                auth.set({
+                    user: { 
+                        first_name: data.first_name, 
+                        last_name: data.last_name, 
+                        email: data.email, 
+                        access_token: data.session.access_token, 
+                        refresh_token: data.session.refresh_token,
+                        login_type: loginType
                     }
-
-                    const data = await response.json();
-
-                    // 👇 Store the user and access token in memory
-                    auth.set({
-                        user: { first_name: data.first_name, last_name: data.last_name, email: data.email, access_token: data.session.access_token, refresh_token: data.session.refresh_token }
-                    });
-
-                    goToSettings();
-                } catch (err) {
-                    console.error(err);
-                    error = "Registration failed";
+                });
+                if (loginType === 'bank') {
+                    goToSettings('/bank');
+                } else {
+                    goToSettings('/profile');
                 }
+            } catch (err) {
+                console.error(err);
+                error = "Login failed";
+            }
+        } else {
+            // 👇 REGISTER flow (unchanged)
+            try {
+                const response = await fetch('http://localhost:8082/api/user/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        first_name: firstName,
+                        last_name: lastName,
+                        email,
+                        hashed_password: password
+                    })
+                });
+
+                if (!response.ok) {
+                    const data = await response.json();
+                    throw new Error(data.message || 'Failed to register');
+                }
+
+                const data = await response.json();
+
+                auth.set({
+                    user: { first_name: data.first_name, last_name: data.last_name, email: data.email, access_token: data.session.access_token, refresh_token: data.session.refresh_token, login_type: loginType }
+                });
+
+                goToSettings("/profile");
+            } catch (err) {
+                console.error(err);
+                error = "Registration failed";
             }
         }
+    }
 </script>
+
 
 <div class="auth-container">
     <div class="form-card">
@@ -112,12 +126,25 @@
                 <input id="password" type="password" bind:value={password} placeholder="Enter password" />
             </div>
 
+            {#if isLogin}
+                <div class="form-group">
+                    <label for="loginType">Login as:</label>
+                    <div class="custom-select">
+                        <select id="loginType" bind:value={loginType}>
+                        <option value="bank">Bank</option>
+                        <option value="business">Business</option>
+                        </select>
+                    </div>
+                </div>
+            {/if}
+
             {#if error}
                 <p style="color: red; text-align:center">{error}</p>
             {/if}
 
             <button type="submit">{isLogin ? "Login" : "Sign Up"}</button>
         </form>
+
 
         <p>
             {isLogin ? "Don't have an account?" : "Already have an account?"}
@@ -214,6 +241,37 @@
 		text-decoration: none;
 		font-weight: 500;
 	}
+/* Container around select for styling */
+.custom-select {
+  position: relative;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Style the native select */
+.custom-select select {
+  width: 100%;
+  padding: 0.8rem;
+  font-size: 1rem;
+  border: none;
+  outline: none;
+  background: white;
+  appearance: none; /* Remove default arrow in most browsers */
+  cursor: pointer;
+}
+
+/* Optional: Add a custom arrow */
+.custom-select::after {
+  content: "▼";
+  position: absolute;
+  right: 0.8rem;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  font-size: 0.8rem;
+  color: #555;
+}
 
 	/* On smaller screens stack first/last name */
 	@media (max-width: 600px) {

@@ -1,96 +1,121 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { browser } from "$app/environment";
-import { page } from '$app/stores';
-  import type { Map } from "leaflet";
-  import "leaflet/dist/leaflet.css";
-import { goto } from '$app/navigation';
-	import Sidebar from "$lib/sidebar.svelte";
- let showMap = false; // state 
-  const links = [
-    { name: "Profile", href: "/profile" },
-    { name: "Business", href: "/business" },
-    { name: "Bank", href: "/bank" },
-    { name: "Account", href: "/account" },
-  ];
-  function navigate(path: string) {
-    goto(path);
-  }
-  // Popover state
-  let showDevicePopover = false;
-  let selectedDevice: Device | null = null;
-  function viewDevice(device: Device) {
-    selectedDevice = device;
-    showDevicePopover = true;
-  }
+    import { get } from 'svelte/store';
+    import { onMount } from "svelte";
+    import { browser } from "$app/environment";
+    import { page } from '$app/stores';
+    import type { Map } from "leaflet";
+    import "leaflet/dist/leaflet.css";
+    import { goto } from '$app/navigation';
+    import Sidebar from "$lib/sidebar.svelte";
+    import { auth, type User } from '$lib/stores/auth';
 
-  function closeDevicePopover() {
-    showDevicePopover = false;
-    selectedDevice = null;
-  }
-  type Device = {
-    device_id: string;
-    name: string;
-    device_type: string;
-    active: boolean;
-  };
+    let showMap = false;
 
-  type Business = {
-    name: string;
-    location: string;
-    geolocation: [number, number];
-    devices: Device[];
-    expanded?: boolean;
-  };
+    const links = [
+        { name: "Profile", href: "/profile" },
+        { name: "Business", href: "/business" },
+        { name: "Bank", href: "/bank" },
+        { name: "Account", href: "/account" },
+    ];
 
-  let businesses: Business[] = [
-    {
-      name: "Eko Hotel",
-      location: "Victoria Island, Lagos",
-      geolocation: [6.4281, 3.4216],
-      devices: [
-        { device_id: "d1", name: "POS 1", device_type: "POS", active: true },
-        { device_id: "d2", name: "Scanner A", device_type: "Scanner", active: false }
-      ]
-    },
-    {
-      name: "Jabi Lake Mall5",
-      location: "Jabi, Abuja",
-      geolocation: [9.0667, 7.4833],
-      devices: [{ device_id: "d3", name: "POS 2", device_type: "POS" , active: false}]
-    },
-    {
-      name: "Jabi Lake Mall4",
-      location: "Jabi, Abuja",
-      geolocation: [9.0667, 7.4833],
-      devices: [{ device_id: "d3", name: "POS 2", device_type: "POS", active: true}]
+    function navigate(path: string) {
+        goto(path);
     }
-  ];
 
-  let map: Map;
+    // Popover state
+    let showDevicePopover = false;
+    let selectedDevice: Device | null = null;
 
+    function viewDevice(device: Device) {
+        selectedDevice = device;
+        showDevicePopover = true;
+    }
 
+    function closeDevicePopover() {
+        showDevicePopover = false;
+        selectedDevice = null;
+    }
 
-  onMount(async () => {
-    if (!browser) return;
-    const L = await import("leaflet");
+    // --- Types matching server response ---
+    type AccountDeviceResponse = {
+        bank_name: string;
+        account_name: string;
+        account_number: string;
+        bank_id: string;
+    };
 
-    map = L.map("map").setView([9.0667, 7.4833], 6);
+    type Device = {
+        id: string;
+        device_id: string;
+        name: string;
+        device_type: string;
+        account: AccountDeviceResponse;
+        active: boolean;
+    };
 
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
+    type Business = {
+        name: string;
+        location: string;
+        geolocation: GeoPoint;
+        devices: Device[];
+        expanded?: boolean;
+    };
+    type GeoPoint = {
+        latitude: number;
+        longitude: number;
+    };
+    type UserBusinessResponse = {
+        list: {
+        name: string;
+        location: string;
+        geolocation: GeoPoint;
+        devices: Device[];
+        }[];
+    };
 
-    businesses.forEach(biz => {
-      L.marker(biz.geolocation)
-        .addTo(map)
-        .bindPopup(`<b>${biz.name}</b><br>${biz.location}`);
+    let businesses: Business[] = [];
+
+    // Fetch from server on mount
+    onMount(async () => {
+        if (!browser) return;
+        const token = get(auth).user?.access_token || "";
+        const response = await fetch("http://localhost:8082/api/auth/businesses", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+            },
+        });
+        // Example fetch; replace URL with your actual endpoint
+        const data: UserBusinessResponse = await response.json();
+
+        // Map server response to local businesses array
+        businesses = data.list.map(b => ({
+        ...b,
+        devices: b.devices.map(d => ({
+            ...d,
+        }))
+        }));
+
+        // --- Leaflet Map ---
+        const L = await import("leaflet");
+        const mapCenter: [number, number] = businesses.length
+        ? [businesses[0].geolocation.latitude, businesses[0].geolocation.longitude]
+        : [9.0667, 7.4833];
+
+        const map = L.map("map").setView(mapCenter, 6);
+
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        businesses.forEach(biz => {
+        L.marker([biz.geolocation.latitude, biz.geolocation.longitude])
+            .addTo(map)
+            .bindPopup(`<b>${biz.name}</b><br>${biz.location}`);
+        });
+        window.addEventListener("resize", () => map.invalidateSize());
     });
-    // ✅ Handle resize so map adjusts when CSS changes
-    window.addEventListener("resize", () => {
-      map.invalidateSize();
-    });
-  });
 </script>
 <!-- Navbar -->
 <div class="page">
@@ -106,7 +131,7 @@ import { goto } from '$app/navigation';
     class="business-list"
     style="opacity: {showMap ? 0 : 1}; pointer-events: {showMap ? 'none' : 'auto'}; transition: opacity 0.3s ease;">
     <div class="business-detail">
-    <Sidebar />
+    <Sidebar loginType={get(auth).user?.login_type} />
 <div class="business-view">
   <h2>Businesses</h2>
 
@@ -184,6 +209,15 @@ import { goto } from '$app/navigation';
       </label>
       <span class="status-text">{selectedDevice.active ? "Active" : "Locked"}</span>
     </div>
+
+    <!-- Account Info -->
+    {#if selectedDevice.account}
+      <div class="account-info">
+        <p><strong>Bank:</strong> {selectedDevice.account.bank_name}</p>
+        <p><strong>Account Name:</strong> {selectedDevice.account.account_name}</p>
+        <p><strong>Account Number:</strong> {selectedDevice.account.account_number}</p>
+      </div>
+    {/if}
   </div>
 </div>
 
@@ -437,7 +471,17 @@ h2 {
   font-weight: 500;
   color: #222;
 }
+.switch-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
 
+.account-info p {
+  margin: 0.3rem 0;
+  font-size: 0.9rem;
+}
 /* Animations */
 @keyframes fadeIn {
   from { opacity: 0; transform: translate(-50%, -48%); }

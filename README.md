@@ -38,18 +38,15 @@ Metal is designed with **privacy and cryptography at its core**, ensuring that:
 ## 📱 Platforms Supported  
 - **Android** (Native SDK)  
 - **iOS** (Native SDK)  
-- **Web** (JavaScript API)  
+- **Web** Dashboard and Control Center
 
----
-
-## 🤝 Contributing  
-We welcome contributions from developers, researchers, and financial institutions who share our vision.  
+**ADTC 2025**
 
 ---
 
 ## 📫 Contact  
 For inquiries, partnerships, or early access:  
-- Email: **team@metalpay.io**  
+- Email: **uwau2544@gmail.com**  
 - Website: [metalpay.io](https://metalpay.io)  
 
 ---

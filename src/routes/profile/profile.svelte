@@ -17,7 +17,7 @@
 
         try {
             const token = get(auth).user?.access_token || "";
-            const response = await fetch("http://localhost:8082/api/auth/update", {
+            const response = await fetch("https://ghost.flizzup-server.com/api/auth/update", {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",

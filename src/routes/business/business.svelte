@@ -79,7 +79,7 @@
     onMount(async () => {
         if (!browser) return;
         const token = get(auth).user?.access_token || "";
-        const response = await fetch("http://localhost:8082/api/auth/businesses", {
+        const response = await fetch("https://ghost.flizzup-server.com/api/auth/businesses", {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",

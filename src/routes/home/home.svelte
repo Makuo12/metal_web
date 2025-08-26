@@ -465,7 +465,7 @@
     
     <!-- Desktop Navigation -->
     <div class="nav-links">
-        <a href="/register" class="auth-link signup-link">Register</a>
+        <a href="/register" class="auth-link signup-link">Login</a>
         <a href="/research" class="auth-link login-link">Research</a>
     </div>
     

@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>METAL — Technical Report</title>
+  <style>
+    :root{
+      --bg:#0b0d12;           /* page background */
+      --panel:#11151c;        /* cards/panels */
+      --muted:#a3afbf;        /* secondary text */
+      --text:#e6edf6;         /* primary text */
+      --accent:#6ee7ff;       /* links & accents */
+      --accent-2:#a78bfa;     /* alt accent */
+      --border:#1e2633;       /* soft borders */
+      --code-bg:#0f141a;      /* code bg */
+      --kbd-bg:#121822;       /* inline code bg */
+      --green:#34d399;        /* success */
+      --red:#f87171;          /* error */
+      --yellow:#fbbf24;       /* warn */
+    }
+
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0; color:var(--text); background:radial-gradient(1500px 800px at 90% -10%, #132238 0%, transparent 60%),
+      radial-gradient(1200px 800px at -20% 20%, #1a1338 0%, transparent 60%), var(--bg);
+      font: 16px/1.65 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    }
+    a{color:var(--accent); text-decoration:none}
+    a:hover{text-decoration:underline}
+
+    /* Layout */
+    .wrap{display:grid; grid-template-columns: 280px 1fr; gap:28px; max-width:1200px; margin:0 auto; padding:32px}
+    @media (max-width: 900px){.wrap{grid-template-columns:1fr; padding:18px}}
+
+    /* Sidebar / TOC */
+    aside{position:sticky; top:16px; height:fit-content; background:var(--panel); border:1px solid var(--border); border-radius:18px; padding:18px}
+    .logo{display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:.4px}
+    .logo .dot{width:10px; height:10px; background:linear-gradient(135deg, var(--accent), var(--accent-2)); border-radius:50%; box-shadow:0 0 16px var(--accent)}
+    nav{margin-top:14px}
+    nav a{display:block; padding:8px 10px; border-radius:10px; color:var(--muted)}
+    nav a:hover{background:rgba(255,255,255,.04); color:var(--text)}
+    nav .section{margin-top:8px; font-size:12px; text-transform:uppercase; color:var(--muted); letter-spacing:.12em; padding:6px 10px}
+
+    /* Main */
+    main{min-width:0}
+    .card{background:var(--panel); border:1px solid var(--border); border-radius:20px; padding:28px; box-shadow:0 10px 40px rgba(0,0,0,.25)}
+    .hero{padding:28px 28px 8px; border:1px solid var(--border); border-radius:20px; background:linear-gradient(160deg, rgba(110,231,255,.12), rgba(167,139,250,.10) 50%, rgba(110,231,255,.06)); backdrop-filter: blur(6px)}
+
+    h1{font-size:34px; margin:0 0 8px; line-height:1.2}
+    h2{font-size:24px; margin:28px 0 12px}
+    h3{font-size:18px; margin:22px 0 8px}
+    p{margin:10px 0}
+    .muted{color:var(--muted)}
+
+    /* Badges */
+    .badge{display:inline-flex; align-items:center; gap:6px; font-weight:600; border:1px solid var(--border); border-radius:999px; padding:6px 10px; margin-right:8px; background:rgba(255,255,255,.04)}
+    .dot-sm{width:8px; height:8px; border-radius:999px; background:var(--accent)}
+
+    /* Lists */
+    ul{padding-left:20px}
+    li{margin:6px 0}
+
+    /* Code blocks */
+    pre{position:relative; background:var(--code-bg); border:1px solid var(--border); border-radius:14px; padding:14px 14px 16px; overflow:auto; -webkit-overflow-scrolling:touch}
+    code{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size:13px}
+    .lang-label{position:absolute; top:8px; right:8px; font-size:12px; color:var(--muted); background:#0b1117; border:1px solid var(--border); padding:2px 8px; border-radius:999px}
+    .copy{position:absolute; top:8px; right:70px; font-size:12px; padding:4px 8px; border-radius:999px; border:1px solid var(--border); background:#0b1117; color:var(--muted); cursor:pointer}
+    .copy:hover{color:var(--text)}
+
+    /* Inline code */
+    :not(pre) > code{background:var(--kbd-bg); border:1px solid var(--border); padding:2px 6px; border-radius:6px}
+
+    /* Callouts */
+    .callout{border:1px solid var(--border); background:linear-gradient(180deg, rgba(110,231,255,.06), transparent); border-radius:14px; padding:14px 16px}
+
+    /* Grid sections */
+    .grid{display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:18px}
+    @media (max-width: 900px){.grid{grid-template-columns:1fr}}
+
+    /* Footer */
+    footer{color:var(--muted); text-align:center; padding:30px 0}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <aside>
+    <div class="logo"><span class="dot"></span><span>METAL — Technical Report</span></div>
+    <div class="section">Contents</div>
+    <nav>
+      <a href="#summary">Executive Summary</a>
+      <a href="#architecture">System Architecture</a>
+      <a href="#onboarding">Bank Onboarding & SDK</a>
+      <a href="#what-it-does">What METAL Does</a>
+      <a href="#differentiators">Why METAL is Different</a>
+      <a href="#build">How We Built It</a>
+      <a href="#threads">Concurrency Model</a>
+      <a href="#lcd">LCD Command Bus</a>
+      <a href="#pipe">Pipe Stream & Cloud</a>
+      <a href="#transmission">Transmission Process</a>
+      <a href="#security">Security & Key Management</a>
+      <a href="#db">Database Integration</a>
+      <a href="#mobile">Mobile Payment Flow</a>
+      <a href="#dashboard">Server & Website</a>
+      <a href="#challenges">Challenges</a>
+      <a href="#accomplishments">Accomplishments</a>
+      <a href="#learnings">What We Learned</a>
+      <a href="#next">What’s Next</a>
+    </nav>
+  </aside>
+
+  <main>
+    <section class="hero card" id="summary">
+      <h1>METAL</h1>
+      <p class="muted">Low‑cost, wireless payment transmitter for fast, secure, contactless payments — without NFC, cards, or client‑side internet.</p>
+      <div class="badges">
+        <span class="badge"><span class="dot-sm"></span> RISC‑V firmware</span>
+        <span class="badge"><span class="dot-sm"></span> Offline first</span>
+        <span class="badge"><span class="dot-sm"></span> ECC + AES</span>
+        <span class="badge"><span class="dot-sm"></span> NIBSS/NIP settlement</span>
+      </div>
+    </section>
+
+    <section class="card" id="architecture">
+      <h2>System Architecture</h2>
+      <div class="grid">
+        <div>
+          <h3>Overview</h3>
+          <p>METAL maintains its own connectivity (satellite, Wi‑Fi, or SIM) so transactions proceed even when customers are offline. It forms an end‑to‑end pipeline between banks, merchants, and customers.</p>
+        </div>
+        <div class="callout">
+          <strong>Core Pillars</strong>
+          <ul>
+            <li>Single‑purpose payment hardware</li>
+            <li>Encrypted device ↔ mobile ↔ cloud transport</li>
+            <li>Instant settlement via Nigeria’s <em>NIBSS Instant Payment (NIP)</em></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="onboarding">
+      <h2>Bank Onboarding & SDK Integration</h2>
+      <p>The bank first registers with our platform to establish trust. Once registered, the bank receives API keys which are integrated into our SDKs for its mobile applications (iOS/Android/others). The SDKs are thin libraries that allow the bank’s apps to communicate securely with METAL devices.</p>
+      <p>Registration data and issued API keys are stored in a secure database used to verify bank identity and manage communication. This ensures the bank is authorized and able to use our services.</p>
+    </section>
+
+    <section class="card" id="what-it-does">
+      <h2>What METAL Does</h2>
+      <ul>
+        <li><strong>Offline‑capable payments:</strong> No NFC, cards, or customer internet required.</li>
+        <li><strong>Device connectivity:</strong> Satellite / Wi‑Fi / SIM modules embedded in METAL.</li>
+        <li><strong>Merchant dashboard:</strong> Transactions, device locations, and business activity synced in real‑time.</li>
+        <li><strong>Customer experience:</strong> Uses existing mobile banking apps; communication is end‑to‑end encrypted.</li>
+      </ul>
+    </section>
+
+    <section class="card" id="differentiators">
+      <h2>Why METAL is Different</h2>
+      <ul>
+        <li><strong>Powered by RISC‑V:</strong> Lightweight architecture; custom wireless protocol up to <strong>1.5 Mbps</strong> for rapid encrypted P2P transfers.</li>
+        <li><strong>Offline Transactions:</strong> Device broadcasts data offline and finalizes settlement through <em>NIBSS Instant Payment (NIP)</em>.</li>
+        <li><strong>Single‑Purpose Efficiency:</strong> Purpose‑built for payments to maximize bandwidth for financial transactions.</li>
+        <li><strong>Low Power:</strong> Operates for <strong>weeks on a single charge</strong>, ideal for low‑power or remote environments.</li>
+      </ul>
+    </section>
+
+    <section class="card" id="build">
+      <h2>How We Built It</h2>
+      <p>At the core is a FreeRTOS‑backed, multithreaded application with four major sections:</p>
+      <ul>
+        <li><strong>Keypad Control</strong> — input from a matrix keypad</li>
+        <li><strong>Pipe Stream</strong> — HTTPS requests to the cloud</li>
+        <li><strong>LCD Display Thread</strong> — UI output to the LCD</li>
+        <li><strong>Jinx</strong> — transmission protocol host/manager</li>
+      </ul>
+
+      <div class="code">
+        <button class="copy" data-copy>Copy</button>
+        <span class="lang-label">rust</span>
+        <pre><code class="language-rust">let thread1 = std::thread::Builder::new()
+    .stack_size(7000)
+    .spawn(move || {
+        keypad_control( state_one, cols, rows);
+    })
+    .unwrap();
+
+let thread2 = std::thread::Builder::new()
+    .stack_size(7000)
+    .spawn(move || {
+        pipe_stream(state_two);
+    })
+    .unwrap();
+
+let thread3 = std::thread::Builder::new()
+    .stack_size(7000)
+    .spawn(move || {
+        lcd_display(lcd, state_three);
+    })
+    .unwrap();
+
+let state_two = state.clone();
+jinx(state_two).unwrap();</code></pre>
+      </div>
+
+      <p>All sections apart from <em>Jinx</em> use a <strong>7000‑byte stack</strong> and park when idle using Rust condition variables. Threads communicate via a shared <code>MainState</code> object wrapped in <code>Arc</code>.</p>
+
+      <div class="code">
+        <button class="copy" data-copy>Copy</button>
+        <span class="lang-label">rust</span>
+        <pre><code class="language-rust">pub struct MainState {
+    pub can_type: Mutex&lt;bool&gt;,
+    pub cond_var: Condvar,
+    pub sent: AtomicBool,
+    pub wifi_access: AtomicBool,
+    pub msg: RwLock&lt;heapless::Vec&lt;char, 11&gt;&gt;,
+    pub pipe: Mutex&lt;Option&lt;(MsgPipe, i64)&gt;&gt;,
+    pub cond_var_pipe: Condvar,
+    pub lcd_command: Mutex&lt;Option&lt;LCDCommand&gt;&gt;,
+    pub cond_var_lcd: Condvar,
+}
+
+let state = Arc::new(MainState::new(connected));
+let state_one = state.clone();
+let state_two = state.clone();
+let state_three = state.clone();</code></pre>
+      </div>
+    </section>
+
+    <section class="card" id="threads">
+      <h2>Concurrency Model</h2>
+      <p>Parking &amp; resuming is managed with condition variables. When the keypad cannot type, the thread parks and releases the lock to avoid busy‑looping.</p>
+      <div class="code">
+        <button class="copy" data-copy>Copy</button>
+        <span class="lang-label">rust</span>
+        <pre><code class="language-rust">let mut can_type = state.can_type.lock().unwrap();
+loop {
+    if !*can_type {
+        can_type = state.cond_var.wait(can_type).unwrap();
+    } else {
+        // ...
+    }
+    FreeRtos::delay_ms(2);
+}</code></pre>
+      </div>
+      <div class="code">
+        <button class="copy" data-copy>Copy</button>
+        <span class="lang-label">rust</span>
+        <pre><code class="language-rust">if let Ok(mut pipe) = state_pipe.pipe.lock() {
+    *pipe = Some((send, time as i64));
+    state_pipe.cond_var_pipe.notify_one();
+}</code></pre>
+      </div>
+    </section>
+
+    <section class="card" id="lcd">
+      <h2>LCD Command Bus</h2>
+      <p>The LCD moved to its own thread so other sections (Pipe Stream, Jinx) can issue display commands via an enum.</p>
+      <div class="code">
+        <button class="copy" data-copy>Copy</button>
+        <span class="lang-label">rust</span>
+        <pre><code class="language-rust">pub enum LCDCommand {
+    Message(bool),
+    SetupTransmissionMsg(bool),
+    HealthCheck((Healthly, bool)),
+    PaymentDone(bool),
+    PreviousMsg(bool),
+    PriceEntered(bool),
+    ClearLastChar(bool),
+    Character((char, bool)),
+}
+
+// Usage
+if let Ok&lt;mut guard&gt; = state.lcd_command.try_lock() {
+    *guard = Some(LCDCommand::PriceEntered(*on_sent));
+    state.cond_var_lcd.notify_one();
+}</code></pre>
+      </div>
+      <div class="callout"><strong>Command Semantics</strong>
+        <ul>
+          <li><code>Message</code>: show simple message and reset</li>
+          <li><code>SetupTransmissionMsg</code>: show transmission status</li>
+          <li><code>HealthCheck</code>: show network state</li>
+          <li><code>PriceEntered</code>/<code>Character</code>/<code>ClearLastChar</code>: keypad UX helpers</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="card" id="pipe">
+      <h2>Pipe Stream &amp; Cloud</h2>
+      <p><strong>Pipe Stream</strong> handles health checks, binary updates, and sending transaction payloads to the cloud <em>exclusively via HTTPS</em>.</p>
+      <div class="code">
+        <button class="copy" data-copy>Copy</button>
+        <span class="lang-label">rust</span>
+        <pre><code class="language-rust">let data = MetalPaymentRequest {
+    customer_id: id,
+    device_id: DEVICE_ID,
+    pipe: msg,
+    encrypted_price: price,
+    time: pipe.1,
+};
+
+let payload = serde_json::to_string_pretty(&data).unwrap();
+let result: MetalPaymentResponse = post_request(&payload).unwrap();</code></pre>
+      </div>
+    </section>
+
+    <section class="card" id="transmission">
+      <h2>Transmission Process Updates</h2>
+      <ol>
+        <li>Unified health check enables one device to handle both direct network payments or defer to mobile when needed.</li>
+        <li>Mobile performs a health call during linking:</li>
+      </ol>
+      <div class="code">
+        <button class="copy" data-copy>Copy</button>
+        <span class="lang-label">swift</span>
+        <pre><code class="language-swift">reader(for: health)</code></pre>
+      </div>
+      <div class="code">
+        <button class="copy" data-copy>Copy</button>
+        <span class="lang-label">rust</span>
+        <pre><code class="language-rust">health
+    .lock()
+    .read(move |arg, _| {
+        log::info!("READ_HEALTH");
+        arg.set_value(&get_health(&state_health));
+    });
+
+fn get_health(keypad: &Arc&lt;MainState&gt;) -&gt; [u8; 16] {
+    let mut msg: [u8; 16] = [b'0'; 16];
+    let health = keypad.network_access.load(Ordering::Relaxed);
+    if health { msg[0] = b'1'; }
+    msg
+}</code></pre>
+      </div>
+      <p>We set a single bit to indicate network availability; this decides who performs subsequent requests.</p>
+
+      <h3>Framed data flow (HEAD … TAIL)</h3>
+      <p>Transmission is most reliable at 16‑byte frames. We use a Linked‑List queue to chunk and sequence data, with mobile waiting for device ACKs before sending the next frame.</p>
+      <div class="code">
+        <button class="copy" data-copy>Copy</button>
+        <span class="lang-label">swift</span>
+        <pre><code class="language-swift">class node { var prev: node?; var next: node?; var value: String? }
+class LinkedList {
+    var head: node?; var tail: node?
+    func enqueue(node: node) { /* ... */ }
+    func dequeue() -&gt; Result&lt;node,LinkedError&gt; { /* ... */ }
+    func chunk(data: String) { /* 16-byte framing */ }
+}
+
+enum LinkedError: Error { case noDataFound }
+
+private func setupData() {
+    list = LinkedList()
+    // read msg, key, id from Keychain ...
+    let data = handleEncrypt(msg: msg, storeKey: key)
+    let start = node(); let mid = node(); let end = node()
+    let ids = id.split(separator: "-")
+    start.value = "HEAD"+ids[0]+ids[1]
+    mid.value = "MID"+ids[2]+ids[3]
+    end.value = "TAIL"+ids[4]
+    list.enqueue(node: start)
+    list.enqueue(node: mid)
+    list.chunk(data: data)
+    list.enqueue(node: end)
+}</code></pre>
+      </div>
+
+      <div class="code">
+        <button class="copy" data-copy>Copy</button>
+        <span class="lang-label">rust</span>
+        <pre><code class="language-rust">encrypt_receiver
+    .lock()
+    .writer_and_reader(move |args| {
+        let data = args.recv_data();
+        let compare = data.iter().map(|x| x.clone() as char).collect::&lt;String&gt;();
+        if compare.contains("HEAD") {
+            // start frame
+        } else if compare.contains("TAIL") {
+            // end frame; pipe to cloud and clear
+        } else {
+            // mid frames
+        }
+        args.notify(); // request next frame from mobile
+    });</code></pre>
+      </div>
+
+      <p class="muted">Average complete exchange: ~950 ms after optimizations and ACK‑gated flow control.</p>
+    </section>
+
+    <section class="card" id="security">
+      <h2>Security &amp; Key Management</h2>
+      <ol>
+        <li><strong>ECC over AES‑only:</strong> Mobile transactional data now uses Elliptic Curve Cryptography; AES remains where symmetric speed is required (e.g., price encryption).</li>
+        <li><strong>Per‑customer key pairs:</strong> Generated on first use via the bank’s API key; public key stored client‑side (Keychain), private key persisted server‑side.</li>
+      </ol>
+
+      <div class="code">
+        <button class="copy" data-copy>Copy</button>
+        <span class="lang-label">rust</span>
+        <pre><code class="language-rust">pub fn generate_keys() -&gt; Result&lt;KeyPair, CryptError&gt; {
+    let server_private_key = SecretKey::random(&mut OsRng);
+    let server_public_key = server_private_key.public_key();
+
+    let private_key_pem = server_private_key.to_pkcs8_pem(LineEnding::LF)?;
+    let file_name = generate_randome_names(10)+".pem";
+    fs::write(&file_name, private_key_pem.as_bytes())?;
+    let result = fs::read_to_string(&file_name)?;
+    fs::remove_file(&file_name)?;
+
+    let public_key_pem = server_public_key.to_sec1_bytes();
+    let public_key_base64 = base64::engine::general_purpose::STANDARD.encode(&public_key_pem);
+
+    Ok(KeyPair { private_key: result, public_key: public_key_base64, file_name })
+}</code></pre>
+      </div>
+
+      <div class="code">
+        <button class="copy" data-copy>Copy</button>
+        <span class="lang-label">swift</span>
+        <pre><code class="language-swift">let id = KeychainManager.store(data.id, forKey: PUBLIC_ID)
+let important = KeychainManager.store(data..., forKey: ...)
+let publicKey = KeychainManager.store(data.public_key, forKey: ...)
+
+func handleEncrypt(msg: String, storeKey: String) -&gt; String {
+    let sec1Bytes = Data(base64Encoded: storeKey)!
+    let publicKey = try! P256.KeyAgreement.PublicKey(x963Representation: sec1Bytes)
+    let eph = P256.KeyAgreement.PrivateKey()
+    let shared = try! eph.sharedSecretFromKeyAgreement(with: publicKey)
+    let key = shared.hkdfDerivedSymmetricKey(using: SHA256.self, salt: Data(), sharedInfo: Data(), outputByteCount: 32)
+    let unix = Int(Date().timeIntervalSince1970)
+    let messageData = "\(msg)&\(unix)".data(using: .utf8)!
+    let sealed = try! AES.GCM.seal(messageData, using: key)
+    let blob = eph.publicKey.x963Representation + sealed.combined!
+    return blob.base64EncodedString()
+}</code></pre>
+      </div>
+    </section>
+
+    <section class="card" id="db">
+      <h2>Database Integration</h2>
+      <p>Postgres + <code>sqlx</code> are used for migrations and query interfaces. Keys and NIBSS/bank‑provided identifiers are persisted server‑side.</p>
+    </section>
+
+    <section class="card" id="mobile">
+      <h2>Mobile Payment Flow</h2>
+      <ul>
+        <li>Mobile receives price from METAL.</li>
+        <li>Price is encrypted with AES using a key stored <em>only</em> in the cloud.</li>
+        <li>Cloud provides the key to METAL; mobile never stores this key.</li>
+      </ul>
+    </section>
+
+    <section class="card" id="dashboard">
+      <h2>Server &amp; Website</h2>
+      <p>Server runs on Axum, fully integrated with Postgres and deployed behind a Caddy HTTPS proxy (e.g., DigitalOcean). A prototype Svelte website acts as a control center.</p>
+      <div class="grid">
+        <div>
+          <h3>Business Features</h3>
+          <ul>
+            <li>Inventory of devices and their business assignments</li>
+            <li>Account numbers mapped per device</li>
+            <li>Transaction analytics and reconciliation (no card/transfer ambiguity)</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Bank Features</h3>
+          <ul>
+            <li>Dedicated section to view and manage API keys</li>
+          </ul>
+        </div>
+      </div>
+      <p class="muted">These layers (website, server, SDKs, APIs) complete METAL as an end‑to‑end ecosystem.</p>
+    </section>
+
+    <section class="card" id="challenges">
+      <h2>Challenges</h2>
+      <ol>
+        <li><strong>no_std constraints:</strong> careful memory management, static layouts.</li>
+        <li><strong>Thread synchronization:</strong> byte‑sized frames across concurrent tasks.</li>
+        <li><strong>Physical transmission:</strong> distance calibration and poor‑connectivity tuning for Jinx.</li>
+        <li><strong>ECC implementation:</strong> library variants and performance tradeoffs.</li>
+        <li><strong>Cross‑language crypto:</strong> Rust↔Swift key compatibility.</li>
+        <li><strong>Reliability at scale:</strong> replaced naive approach with a Linked‑List queue for framed transmission.</li>
+      </ol>
+    </section>
+
+    <section class="card" id="accomplishments">
+      <h2>Accomplishments</h2>
+      <ul>
+        <li>End‑to‑end control: RISC‑V silicon, Rust firmware, custom protocol, and hosted backend.</li>
+        <li>Security: ECC, AES, secure boot, flash encryption, OTA/update mechanisms.</li>
+        <li>Local rails: Direct NIBSS integration — <em>no Mastercard/Visa dependency</em>.</li>
+        <li>Accessible: Designed and cost‑optimized for Nigerian users.</li>
+      </ul>
+    </section>
+
+    <section class="card" id="learnings">
+      <h2>What We Learned</h2>
+      <p>Clarity of purpose beats feature creep. The right crypto balances security and efficiency. Embracing embedded constraints (low‑level memory, static typing, hardware‑level I/O) leads to simpler, faster designs.</p>
+    </section>
+
+    <section class="card" id="next">
+      <h2>What’s Next</h2>
+      <ul>
+        <li>Rural roll‑out with a satellite module and redesigned PCB for deep offline coverage.</li>
+        <li>Integrations for toll gates and fuel stations with automatic NIBSS reporting and compliance tooling.</li>
+        <li>Continue iterating across the stack — from chip to cloud — to scale securely.</li>
+      </ul>
+    </section>
+
+    <footer>
+      © METAL — Technical Report
+    </footer>
+  </main>
+</div>
+
+<script>
+  // Copy-to-clipboard for code blocks
+  document.querySelectorAll('[data-copy]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const pre = btn.nextElementSibling.nextElementSibling; // span.lang-label + pre
+      const code = pre.querySelector('code').innerText;
+      navigator.clipboard.writeText(code).then(() => {
+        const old = btn.textContent;
+        btn.textContent = 'Copied';
+        btn.style.color = 'var(--green)';
+        setTimeout(() => { btn.textContent = 'Copy'; btn.style.color='var(--muted)'; }, 1200);
+      });
+    });
+  });
+</script>
+</body>
+</html>

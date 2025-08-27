@@ -416,7 +416,6 @@
         };
     });
 </script>
-
 <div class="home-body">
     <div bind:this={containerElem} id="container"></div>
 
@@ -466,7 +465,7 @@
     <!-- Desktop Navigation -->
     <div class="nav-links">
         <a href="/register" class="auth-link signup-link">Login</a>
-        <a href="/research" class="auth-link login-link">Research</a>
+        <a href="/research" class="auth-link login-link">Documentation</a>
     </div>
     
     <!-- Hamburger Menu -->

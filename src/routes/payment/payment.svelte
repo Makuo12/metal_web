@@ -52,7 +52,7 @@
       const data: UserPaymentResponse = await response.json();
 
       // Only update payments if data changed
-      if (!isEqual(payments, data.list)) {
+      if (payments.length < data.list.length) {
         payments = data.list;
       }
     } catch (err) {

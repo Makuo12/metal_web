@@ -1,52 +1,58 @@
-# Metal  
+# Metal Test Website  
 
-**Metal** is a next-generation contactless payment solution designed to provide seamless, secure, and affordable transactions without relying on traditional card networks like Mastercard or Visa.  
+This is a **test environment** for the Metal payment platform. It is designed to demonstrate how Metal could run in production.  
 
-Our mission is to lower transaction costs for merchants while ensuring fast, reliable, and modern payment experiences for consumers.  
-
----
-
-## 🚀 Features  
-
-- **Contactless Payments** – Uses **ISO/IEC 14443** (same standard as EMV cards).  
-- **Banking System Integration** – Works directly with banks and payment providers.  
-- **Low Merchant Fees** – Avoids Mastercard/Visa transaction charges.  
-- **Cross-Platform** – Supports **Android, iOS, and web interfaces**.  
-- **Secure** – Implements **end-to-end encryption** with modern cryptographic standards.  
+🔗 **Website Link**: [https://lively-mooncake-6bc680.netlify.app](https://lively-mooncake-6bc680.netlify.app)  
+🌐 **Test API Domain**: [https://ghost.flizzup-server.com](https://ghost.flizzup-server.com)  
+📡 Hosted on **Netlify**  
 
 ---
 
-## 📌 Vision  
-Metal aims to redefine the future of payments by building an open, affordable, and accessible ecosystem that empowers businesses and consumers alike.  
-
-## 🌍 Use Cases  
-- Retail point-of-sale payments  
-- Peer-to-peer transfers  
-- Online and in-app purchases  
-- Merchant settlements with lower fees  
-
----
-
-## 🔒 Security  
-Metal is designed with **privacy and cryptography at its core**, ensuring that:  
-- All transactions are **end-to-end encrypted**  
-- Sensitive payment data never leaves the device unprotected  
-- Modern cryptographic algorithms safeguard both consumers and merchants  
+## ⚡ Overview  
+- Tokens are **stored in localStorage** (not secure, for testing only).  
+- Routes are connected to a **server running on the cloud**.  
+- Includes **bank and business account dashboards**.  
+- **When logging in**:  
+  - Select **Bank** → to access the **Bank Dashboard**.  
+  - Select **Business** → to access the **Business Dashboard**.  
 
 ---
 
-## 📱 Platforms Supported  
-- **Android** (Native SDK)  
-- **iOS** (Native SDK)  
-- **Web** Dashboard and Control Center
+## 🔑 Test Accounts  
 
-**ADTC 2025**
+### Bank Accounts  
+- **Zenith Bank** → `zen@zenithHQ.com`  
+- **Wema Bank** → `wema@wemabank.com`  
+
+### Business Account  
+- **Chioma Okwu** → `chioma.okwu@yahoo.com`  
+
+### Password for all accounts  
+```
+makuo1234
+```
 
 ---
 
-## 📫 Contact  
-For inquiries, partnerships, or early access:  
-- Email: **uwau2544@gmail.com**  
-- Website: [metalpay.io](https://metalpay.io)  
+## 📡 API Routes  
+
+### **Protected Routes** (`/auth`)  
+- `GET /profile` → Get user profile  
+- `PUT /update` → Update user  
+- `GET /businesses` → Get businesses  
+- `GET /bank` → Get bank info  
+- `GET /account` → Get account info  
+- `GET /payments` → Get payments  
+
+### **Public User Routes** (`/user`)  
+- `POST /login` → Login  
+- `POST /refresh` → Refresh token  
+- `POST /register` → Register new user  
 
 ---
+
+## ⚠️ Important Notes  
+- This site is for **testing purposes only**.  
+- Do not store real financial data.  
+- Security is not enforced (e.g., tokens in localStorage).  
+- Intended to **provide an idea of how Metal works in production**.  

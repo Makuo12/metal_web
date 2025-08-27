@@ -5,18 +5,31 @@
   import { fly, scale } from "svelte/transition";
   import { onMount } from "svelte";
 
-  // Match Rust structs in TypeScript
-  type PaymentResponse = {
-    device_id: string;
-    amount: number;
-    bank_id: string;
-    account_name: string;
-    account_number: string;
-    device_name: string;
-    device_type: string;
-    customer_first_name: string;
-    customer_last_name: string;
-  };
+  // Add a UUID generator
+function generateUUID(): string {
+  return crypto.randomUUID
+    ? crypto.randomUUID()
+    : "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+        const r = (Math.random() * 16) | 0,
+          v = c === "x" ? r : (r & 0x3) | 0x8;
+        return v.toString(16);
+      });
+}
+
+type PaymentResponse = {
+  device_id: string;
+  amount: number;
+  bank_id: string;
+  account_name: string;
+  account_number: string;
+  device_name: string;
+  device_type: string;
+  customer_first_name: string;
+  customer_last_name: string;
+  _uuid?: string; // temporary unique key
+};
+
+
 
   type UserPaymentResponse = {
     list: PaymentResponse[];
@@ -36,29 +49,31 @@
     return JSON.stringify(a) === JSON.stringify(b);
   }
 
-  // Fetch payments from backend
   async function fetchPayments() {
-    try {
-      const token = get(auth).user?.access_token || "";
-      const response = await fetch("https://ghost.flizzup-server.com/api/auth/payments", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
-        },
-      });
-      if (!response.ok) throw new Error("Failed to fetch payments");
+  try {
+    const token = get(auth).user?.access_token || "";
+    const response = await fetch("https://ghost.flizzup-server.com/api/auth/payments", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+    if (!response.ok) throw new Error("Failed to fetch payments");
 
-      const data: UserPaymentResponse = await response.json();
+    const data: UserPaymentResponse = await response.json();
 
-      // Only update payments if data changed
-      if (payments.length < data.list.length) {
-        payments = data.list;
-      }
-    } catch (err) {
-      console.error("Error fetching payments:", err);
+    if (payments.length < data.list.length) {
+      // assign a uuid to each new payment
+      payments = data.list.map((p) => ({
+        ...p,
+        _uuid: generateUUID(),
+      }));
     }
+  } catch (err) {
+    console.error("Error fetching payments:", err);
   }
+}
 
   onMount(() => {
     fetchPayments(); // initial load
@@ -130,7 +145,7 @@
       <p style="text-align:center;color:#666;">No payments found</p>
     {/if}
 
-    {#each payments as payment (payment.device_id)}
+    {#each payments as payment (payment._uuid)}
       <div
         class="payment-card"
         in:fly={{ y: 20, duration: 400 }}
